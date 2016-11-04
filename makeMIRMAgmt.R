@@ -1,8 +1,6 @@
 ######  Converting Refseq identifiers to HGNC symbols with biomaRt ###########
 
 library(readr)
-## BiocInstaller::biocLite("lwaldron/LeviRmisc")
-library(LeviRmisc)
 
 download.file("http://mirdb.org/miRDB/download/miRDB_v5.0_prediction_result.txt.gz", destfile = "miRDB_v5.0_prediction_result.txt.gz")
 con <- gzfile("miRDB_v5.0_prediction_result.txt.gz")
