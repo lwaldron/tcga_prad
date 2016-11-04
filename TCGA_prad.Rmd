@@ -20,8 +20,9 @@ if(require(RTCGAToolbox)){
   must.install <- TRUE
 }
 if(must.install){
+  library(BiocInstaller)
   biocLite(c("limma", "RCircos", "data.table", "RCurl", "RJSONIO"))
-  biocLite("Link-NY/RTCGAToolbox", "vjcitn/MultiAssayExperiment")
+  biocLite("Link-NY/RTCGAToolbox", "vjcitn/MultiAssayExperiment", "waldronlab/BiocInterfaces")
 }
 ```
 
@@ -66,16 +67,17 @@ choices <- tolower(gsub("_", "", c("RNAseq_Gene", "miRNASeq_Gene",
 ```
 
 ```{r, cache=TRUE}
-dses <- lapply(choices, function(choice) try(extract(prad, choice, 
-                                            clinic=TRUE),
+library(BiocInterfaces)
+dses <- lapply(choices, function(choice) try(BiocInterfaces::TCGAextract(prad, choice),
                                              silent=TRUE))
 names(dses) <- choices
 dses
 ```
 
 ```{r, cache=TRUE}
-eset.rnaseq <- extract(prad, "rnaseq2genenorm")
-eset.rnaseq$racevar = mergeVecs(as.character(eset.rnaseq$patient.clinical_cqcf.race), as.character(eset.rnaseq$patient.race))
+eset.rnaseq <- TCGAextract(prad, "rnaseq2genenorm")
+eset.rnaseq$racevar = mergeVecs(as.character(eset.rnaseq$patient.clinical_cqcf.race),  
+                                as.character(eset.rnaseq$patient.race))
 
 write.csv(exprs(eset.rnaseq), file="prad_rnaseq.csv")
 write.csv(pData(eset.rnaseq), file="prad_clinical.csv")
