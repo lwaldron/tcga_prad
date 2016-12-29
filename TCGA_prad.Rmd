@@ -47,7 +47,7 @@ if(!file.exists("prad_rnaseq_eset.rds") | !file.exists("prad_mirnaseq_eset.rds")
   eset.rnaseq$racevar <- factor(eset.rnaseq$racevar, levels=c("white", "black or african american"))
   write.csv(exprs(eset.rnaseq), file="prad_rnaseq.csv")
   write.csv(pData(eset.rnaseq), file="prad_clinical.csv")
-  saveRDS(eset.rnaseq, file="prad_eset.rds")
+  saveRDS(eset.rnaseq, file="prad_rnaseq_eset.rds")
 }
 ```
 
