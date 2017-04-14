@@ -1,0 +1,123 @@
+---
+title: "Create Files for GSEA: Tumor and Normal Tissue Comparison"
+author: "Peter Chernek"
+date: "April 13, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+suppressPackageStartupMessages({ 
+library(LeviRmisc)
+library(MultiAssayExperiment)
+library(Biobase)
+library(TCGAutils)
+library(readr)
+library(org.Hs.eg.db)
+library(xlsx)
+  
+})
+```
+
+Download from: https://www.dropbox.com/s/g9k41gv8qx1sqqm/prad_eset.rds
+
+
+#Get RNAseq Expression Data for Tumor and Normal Tissue Prostate Samples#
+
+```{r}
+
+RNAseq <- readRDS("C:/Users/chernek/Downloads/prad_eset.rds")
+
+RNAseq<-exprs(RNAseq)
+
+
+
+normals<- grep("-11", colnames(RNAseq))
+
+tumors<- grep("-01", colnames(RNAseq))
+
+
+
+RNAseq<-RNAseq[ , c(normals, tumors)]
+
+RNAseq<-as.data.frame(RNAseq)
+
+
+write.csv(RNAseq, file = "C:/Users/chernek/Desktop/RNAseq.xlsx", row.names = TRUE, col.names = TRUE )
+
+
+
+```
+
+
+
+#Make CLS file for GSEA
+```{r}
+
+type1<-colnames(RNAseq)[1:52]
+
+type2<-colnames(RNAseq)[53:539]
+
+for (i in 1:52){
+  type1[(i)]<- "tumor"
+}
+
+for (i in 1:487){
+  type2[(i)]<-"normal"
+}
+
+
+type<-c(type1,type2)
+
+type<-factor(type, levels=c("tumor", "normal"))
+
+
+makeCLS(type, fname="TumorNormal.cls")
+```
+
+#Create GMT file of microRNA 1304 Genesets
+
+```{r}
+
+
+download.file("http://mirdb.org/miRDB/download/miRDB_v5.0_prediction_result.txt.gz", destfile = "miRDB_v5.0_prediction_result.txt.gz")
+con <- gzfile("miRDB_v5.0_prediction_result.txt.gz")
+dbdat <- readr::read_delim(con, delim = "\t", col_names = FALSE)
+dbdat <- data.frame(dbdat, stringsAsFactors = FALSE)
+
+
+dbdat<-subset(dbdat, dbdat$X1 %in% "hsa-miR-1304-3p" | dbdat$X1 %in% "hsa-miR-1304-5p")
+
+
+
+map <- mapIds(org.Hs.eg.db, keys=dbdat[, 2], column=c("SYMBOL"), keytype="REFSEQ")
+dbdat$hgnc <- map
+dbdat <- dbdat[!is.na(dbdat$hgnc), ]
+
+mirs <- unique(dbdat[, 1])
+
+mirgmt <- lapply(mirs, function(mir){
+  return( dbdat[dbdat[, 1] %in% mir, "hgnc"] )
+})
+names(mirgmt) <- mirs
+
+writeGMT <- function (object, fname){
+  if (class(object) != "list") 
+    stop("object should be of class 'list'")
+  if (file.exists(fname)) 
+    unlink(fname)
+  for (iElement in 1:length(object)) {
+    write.table(t(c(rep(names(object)[iElement], 2), object[[iElement]])), 
+                sep = "\t", quote = FALSE, file = fname, append = TRUE, 
+                col.names = FALSE, row.names = FALSE)
+  }
+}
+
+writeGMT(mirgmt, fname = "mirDB.gmt")
+```
+
